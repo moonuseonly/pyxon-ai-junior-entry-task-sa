@@ -1,0 +1,36 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-multipart==0.0.9
+
+# Parsing
+pdfplumber==0.11.4
+python-docx==1.1.2
+
+# Embeddings + vector store
+sentence-transformers==3.1.1
+chromadb>=1.0,<2
+
+# SQL store
+SQLAlchemy==2.0.35
+psycopg2-binary==2.9.9
+
+# Arabic text utilities
+pyarabic==0.6.15
+# Note: python-bidi is deliberately NOT a dependency. Its job is reordering
+# text for renderers that don't understand bidirectional text (image canvases,
+# some legacy PDF writers). Browsers, terminals, and JSON consumers already
+# implement the Unicode Bidi Algorithm — applying bidi reordering ourselves
+# at the API layer would corrupt logical text order for storage/search. The
+# one place directionality genuinely mattered (reconstructing reading order
+# from PDF word coordinates) is handled directly in app/parsers/pdf_parser.py.
+
+# Benchmarks / eval
+numpy>=1.26,<3
+
+# Optional LLM-synthesized answers (falls back to extractive if unset)
+groq==0.11.0
+
+# Testing
+pytest==8.3.3

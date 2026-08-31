@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Test-only: generates PDFs on the fly for parser tests, not needed at runtime
+fpdf2==2.7.9

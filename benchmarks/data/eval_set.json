@@ -1,0 +1,31 @@
+{
+  "documents": [
+    {
+      "filename": "churn_report_en.txt",
+      "text": "Quarterly Churn Report\n\nCustomer churn increased by twelve percent in the last quarter, driven primarily by prepaid segment customers switching providers after a competitor's price cut. Postpaid churn remained stable at three percent. The data team recommends a targeted retention offer for prepaid customers with declining usage trends over the last sixty days."
+    },
+    {
+      "filename": "network_report_en.txt",
+      "text": "Network Performance Summary\n\nAverage call drop rate fell to 0.8 percent this quarter after the rollout of additional 4G towers in the eastern region. Data throughput improved by eighteen percent on average. No significant degradation was observed in the western region during peak hours."
+    },
+    {
+      "filename": "churn_report_ar_diacritized.txt",
+      "text": "تَقْرِيرُ التَّسَرُّبِ الرُّبْعِيِّ\n\nارْتَفَعَ مُعَدَّلُ تَسَرُّبِ الْعُمَلَاءِ بِنِسْبَةِ اثْنَيْ عَشَرَ بِالْمِئَةِ خِلَالَ الرُّبْعِ الْأَخِيرِ، وَيُعْزَى ذَلِكَ بِشَكْلٍ رَئِيسِيٍّ إِلَى تَحَوُّلِ عُمَلَاءِ الشَّرَائِحِ مُسْبَقَةِ الدَّفْعِ إِلَى مُزَوِّدٍ مُنَافِسٍ بَعْدَ خَفْضِ الْأَسْعَارِ."
+    },
+    {
+      "filename": "network_report_ar_diacritized.txt",
+      "text": "مُلَخَّصُ أَدَاءِ الشَّبَكَةِ\n\nانْخَفَضَ مُعَدَّلُ انْقِطَاعِ الْمُكَالَمَاتِ إِلَى صِفْرٍ فَاصِلَة ثَمَانِيَةَ بِالْمِئَةِ هَذَا الرُّبْعَ بَعْدَ إِضَافَةِ أَبْرَاجِ شَبَكَةِ الْجِيلِ الرَّابِعِ فِي الْمِنْطَقَةِ الشَّرْقِيَّةِ."
+    },
+    {
+      "filename": "hr_policy_en.txt",
+      "text": "Remote Work Policy\n\nEmployees may work remotely up to three days per week, subject to manager approval. Full remote arrangements require director-level sign-off and are reviewed quarterly. All remote employees must be reachable during core hours, ten AM to three PM local time."
+    }
+  ],
+  "queries": [
+    {"question": "Why did prepaid customer churn increase?", "expected_filename": "churn_report_en.txt"},
+    {"question": "What caused the improvement in call drop rate?", "expected_filename": "network_report_en.txt"},
+    {"question": "How many days per week can employees work remotely?", "expected_filename": "hr_policy_en.txt"},
+    {"question": "لماذا ارتفع معدل تسرب العملاء؟", "expected_filename": "churn_report_ar_diacritized.txt"},
+    {"question": "ما سبب تحسن أداء الشبكة؟", "expected_filename": "network_report_ar_diacritized.txt"}
+  ]
+}
