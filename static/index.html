@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arabic Document Intelligence</title>
+<style>
+  :root {
+    --bg: #1a1512;
+    --panel: #241d18;
+    --panel-border: #382f27;
+    --text: #ede6d6;
+    --text-dim: #a89a87;
+    --accent: #c9a227;
+    --accent-dim: #8a6f1c;
+    --teal: #3d8a76;
+    --error: #c1543f;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+  }
+
+  header {
+    padding: 2.5rem 1.5rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  header h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.6rem;
+    letter-spacing: 0.02em;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 1.75rem 1.25rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .panel.wide { grid-column: 1 / -1; }
+
+  .panel h2 {
+    margin: 0 0 0.9rem;
+    font-size: 1.05rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--panel-border);
+    border-radius: var(--radius);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .drop-zone.dragover { border-color: var(--accent); color: var(--text); }
+  .drop-zone input { display: none; }
+  .drop-zone .filename { color: var(--text); margin-top: 0.4rem; font-size: 0.9rem; }
+
+  button {
+    margin-top: 0.85rem;
+    width: 100%;
+    padding: 0.65rem;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #1a1512;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  button:disabled { background: var(--accent-dim); cursor: not-allowed; opacity: 0.6; }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+
+  textarea, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 4.5rem; }
+
+  .row { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.6rem; }
+  .row label { font-size: 0.85rem; color: var(--text-dim); white-space: nowrap; }
+  .row input[type="number"] { width: 4.5rem; }
+
+  .result {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--panel-border);
+    font-size: 0.9rem;
+    display: none;
+  }
+  .result.show { display: block; }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--teal);
+    color: #0f1a17;
+    margin-left: 0.4rem;
+  }
+  .badge.amber { background: var(--accent); color: #1a1512; }
+
+  .answer-text {
+    background: var(--bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 0.8rem;
+    margin: 0.6rem 0;
+    white-space: pre-wrap;
+  }
+
+  .source {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .source:last-child { border-bottom: none; }
+  .source strong { color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--panel-border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  .empty { color: var(--text-dim); font-size: 0.88rem; font-style: italic; }
+  .error-banner {
+    display: none;
+    background: var(--error);
+    color: #fff;
+    padding: 0.6rem 0.8rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-top: 0.6rem;
+  }
+  .error-banner.show { display: block; }
+
+  .spinner {
+    display: none;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.6rem;
+  }
+  .spinner.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Arabic Document Intelligence</h1>
+  <p>Upload a document, ask questions about it. Arabic diacritics preserved by default.</p>
+</header>
+
+<main>
+
+  <section class="panel">
+    <h2>1. Ingest a document</h2>
+    <div class="drop-zone" id="dropZone">
+      <div>Click or drop a PDF, DOCX, or TXT file</div>
+      <div class="filename" id="fileName"></div>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.txt">
+    </div>
+    <button id="ingestBtn" disabled>Upload &amp; Process</button>
+    <div class="spinner" id="ingestSpinner">Processing — first run downloads the embedding model, this can take a minute…</div>
+    <div class="error-banner" id="ingestError"></div>
+    <div class="result" id="ingestResult"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Ask a question</h2>
+    <textarea id="questionInput" dir="auto" placeholder="Ask in English or Arabic…"></textarea>
+    <div class="row">
+      <label for="topK">Top K results</label>
+      <input type="number" id="topK" value="5" min="1" max="20">
+    </div>
+    <button id="askBtn">Ask</button>
+    <div class="spinner" id="askSpinner">Thinking…</div>
+    <div class="error-banner" id="askError"></div>
+    <div class="result" id="askResult"></div>
+  </section>
+
+  <section class="panel wide">
+    <h2>Ingested documents <button style="all:unset;cursor:pointer;color:var(--accent);font-size:0.85rem;margin-left:0.5rem;" id="refreshDocs">↻ refresh</button></h2>
+    <div id="docsContainer"><p class="empty">Loading…</p></div>
+  </section>
+
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// --- Ingest ---
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+let selectedFile = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) setFile(fileInput.files[0]);
+});
+
+function setFile(file) {
+  selectedFile = file;
+  $('fileName').textContent = file.name;
+  $('ingestBtn').disabled = false;
+}
+
+$('ingestBtn').addEventListener('click', async () => {
+  if (!selectedFile) return;
+  const btn = $('ingestBtn');
+  const spinner = $('ingestSpinner');
+  const errorBox = $('ingestError');
+  const resultBox = $('ingestResult');
+  btn.disabled = true;
+  spinner.classList.add('show');
+  errorBox.classList.remove('show');
+  resultBox.classList.remove('show');
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    const res = await fetch('/ingest', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Ingestion failed');
+
+    resultBox.innerHTML = `
+      <div><strong>${escapeHtml(data.filename)}</strong>
+        <span class="badge amber">${escapeHtml(data.strategy)} chunking</span>
+      </div>
+      <div style="margin-top:0.4rem;color:var(--text-dim);font-size:0.85rem;">
+        ${data.chunk_count} chunk(s) created — ${escapeHtml(data.strategy_reason)}
+      </div>`;
+    resultBox.classList.add('show');
+    loadDocuments();
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  } finally {
+    spinner.classList.remove('show');
+    btn.disabled = false;
+  }
+});
+
+// --- Query ---
+$('askBtn').addEventListener('click', async () => {
+  const question = $('questionInput').value.trim();
+  if (!question) return;
+  const btn = $('askBtn');
+  const spinner = $('askSpinner');
+  const errorBox = $('askError');
+  const resultBox = $('askResult');
+  btn.disabled = true;
+  spinner.classList.add('show');
+  errorBox.classList.remove('show');
+  resultBox.classList.remove('show');
+
+  try {
+    const res = await fetch('/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, top_k: parseInt($('topK').value) || 5 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Query failed');
+
+    const modeBadge = data.mode === 'llm'
+      ? '<span class="badge amber">LLM-synthesized</span>'
+      : data.mode === 'extractive_fallback'
+        ? '<span class="badge">extractive fallback</span>'
+        : '';
+
+    const sourcesHtml = (data.sources || []).map(s => `
+      <div class="source">
+        <strong>${escapeHtml(s.filename || 'unknown')}</strong>
+        ${s.heading_path ? ' — ' + escapeHtml(s.heading_path) : ''}
+        <span style="float:right">score ${s.combined_score}</span>
+      </div>`).join('') || '<p class="empty">No sources</p>';
+
+    resultBox.innerHTML = `
+      <div>${modeBadge}</div>
+      <div class="answer-text" dir="auto">${escapeHtml(data.answer)}</div>
+      <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.3rem;">Sources</div>
+      ${sourcesHtml}`;
+    resultBox.classList.add('show');
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  } finally {
+    spinner.classList.remove('show');
+    btn.disabled = false;
+  }
+});
+
+$('questionInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    $('askBtn').click();
+  }
+});
+
+// --- Documents list ---
+async function loadDocuments() {
+  const container = $('docsContainer');
+  try {
+    const res = await fetch('/documents');
+    const docs = await res.json();
+    if (!docs.length) {
+      container.innerHTML = '<p class="empty">No documents ingested yet — upload one above.</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table>
+        <thead><tr><th>Filename</th><th>Type</th><th>Strategy</th><th>Chunks</th><th>Arabic</th></tr></thead>
+        <tbody>
+          ${docs.map(d => `
+            <tr>
+              <td>${escapeHtml(d.filename)}</td>
+              <td>${escapeHtml(d.file_type)}</td>
+              <td>${escapeHtml(d.chunking_strategy)}</td>
+              <td>${d.chunk_count}</td>
+              <td>${d.contains_arabic ? '<span class="badge">yes</span>' : '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (err) {
+    container.innerHTML = `<p class="empty">Couldn't load documents: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+$('refreshDocs').addEventListener('click', loadDocuments);
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+loadDocuments();
+</script>
+
+</body>
+</html>

@@ -1,10 +1,20 @@
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env into the actual process environment. Pydantic's own env_file
+# support below only populates fields DECLARED on this Settings class — it
+# does not set them as real os.environ values. GROQ_API_KEY is deliberately
+# NOT a Settings field (see app/rag/generation.py — it's read via plain
+# os.getenv so the Groq integration stays fully optional), so without this
+# explicit load, a .env file containing GROQ_API_KEY would silently never
+# be seen by that lookup.
+load_dotenv()
 
 
 class Settings(BaseSettings):
     """Central configuration, overridable via environment variables / .env."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="APP_")
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="APP_", extra="ignore")
 
     app_name: str = "Arabic-Aware Document Intelligence for RAG"
 

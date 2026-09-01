@@ -1,0 +1,26 @@
+# Environment variables
+.env
+.env.*
+
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Testing
+.pytest_cache/
+
+# IDE
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local application data
+data/
+
+# Benchmark generated data
+benchmarks/data/

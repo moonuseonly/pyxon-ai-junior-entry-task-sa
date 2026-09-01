@@ -18,6 +18,8 @@ import statistics
 import pdfplumber
 
 from app.parsers.base import ParsedBlock, ParsedDocument
+from app.processing.arabic_utils import contains_arabic
+from pathlib import Path
 
 # A line whose median font size is this many times the document's body size
 # (or more) is treated as a heading. Two tiers gives level-1 vs level-2
@@ -43,7 +45,20 @@ def _group_words_into_lines(words: list[dict]) -> list[list[dict]]:
 
 
 def _line_text(line: list[dict]) -> str:
-    return " ".join(w["text"] for w in sorted(line, key=lambda w: w["x0"]))
+    """Reconstruct a line's reading-order text from its words' x-positions.
+
+    PDF word coordinates reflect *visual* (on-page) position, not logical
+    reading order — the format has no native concept of "which word comes
+    first." For LTR scripts, sorting left-to-right by x0 happens to produce
+    correct reading order. For RTL scripts like Arabic, a line reads starting
+    from the rightmost word, so sorting the same way would reverse it. We
+    check the line's own text to decide which direction applies, rather than
+    assuming one direction for the whole document (a page can mix both).
+    """
+    joined_for_detection = "".join(w["text"] for w in line)
+    reverse = contains_arabic(joined_for_detection)
+    ordered = sorted(line, key=lambda w: w["x0"], reverse=reverse)
+    return " ".join(w["text"] for w in ordered)
 
 
 def _line_font_size(line: list[dict]) -> float:
@@ -106,7 +121,7 @@ class PDFParser:
                 full_text_parts.append("\n".join(page_text_parts))
 
         return ParsedDocument(
-            filename=file_path.split("/")[-1],
+            filename=Path(file_path).name,
             file_type="pdf",
             blocks=blocks,
             full_text="\n".join(full_text_parts),
