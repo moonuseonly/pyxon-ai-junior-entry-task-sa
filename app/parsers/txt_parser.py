@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from app.parsers.base import ParsedBlock, ParsedDocument
 
 
@@ -15,8 +17,9 @@ class TXTParser:
                 blocks.append(ParsedBlock(text=para, block_type="paragraph"))
 
         return ParsedDocument(
-            filename=file_path.split("/")[-1],
+            filename=Path(file_path).name,
             file_type="txt",
             blocks=blocks,
             full_text=raw,
         )
+    
