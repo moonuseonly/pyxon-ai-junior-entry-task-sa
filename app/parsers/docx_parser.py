@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from docx import Document as DocxDocument
 
 from app.parsers.base import ParsedBlock, ParsedDocument
@@ -23,7 +25,8 @@ class DOCXParser:
             text = para.text.strip()
             if not text:
                 continue
-            level = _heading_level(para.style.name if para.style else "")
+            style_name = para.style.name if para.style and para.style.name else ""
+            level = _heading_level(style_name)
             block_type = "heading" if level > 0 else "paragraph"
             blocks.append(ParsedBlock(text=text, block_type=block_type, level=level))
             full_text_parts.append(text)
@@ -42,8 +45,9 @@ class DOCXParser:
                 full_text_parts.append(table_text)
 
         return ParsedDocument(
-            filename=file_path.split("/")[-1],
+            filename=Path(file_path).name,
             file_type="docx",
             blocks=blocks,
             full_text="\n".join(full_text_parts),
         )
+    
