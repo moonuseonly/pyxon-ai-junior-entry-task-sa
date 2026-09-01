@@ -12,6 +12,7 @@ import json
 import os
 import shutil
 import time
+import tracemalloc
 from pathlib import Path
 
 # Point the app at an isolated benchmark store BEFORE importing app modules,
@@ -49,11 +50,22 @@ def _write_temp_doc(tmp_dir: Path, filename: str, text: str) -> str:
 
 
 def run():
-    eval_set = json.loads((Path(__file__).parent / "data" / "eval_set.json").read_text())
+    eval_set = json.loads(
+        (Path(__file__).parent / "data" / "eval_set.json").read_text(encoding="utf-8")
+    )
     _reset_store()
 
     tmp_dir = _BENCH_DIR / "source_docs"
     tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Track peak memory across ingestion + retrieval — the two phases that
+    # actually allocate meaningfully (parsing, embedding, chunk storage).
+    # tracemalloc measures Python-level allocations; it won't capture every
+    # byte a C extension (torch, chromadb's Rust core) allocates outside
+    # Python's own allocator, but it's dependency-free and gives a real,
+    # reproducible number without adding a package that could fail to build
+    # on someone's machine the way psycopg2/numpy just did for us.
+    tracemalloc.start()
 
     # --- Ingestion ---
     filename_to_doc_id = {}
@@ -81,7 +93,7 @@ def run():
         retrieved_filenames = [r.metadata.get("filename") for r in results]
         expected_doc_id = filename_to_doc_id[q["expected_filename"]]
         relevant_ids = {expected_doc_id}
-        retrieved_doc_ids = [r.metadata.get("document_id") for r in results]
+        retrieved_doc_ids: list[str] = [str(r.metadata.get("document_id")) for r in results]
 
         p = precision_at_k(retrieved_doc_ids, relevant_ids, TOP_K)
         r = recall_at_k(retrieved_doc_ids, relevant_ids, TOP_K)
@@ -143,6 +155,11 @@ def run():
         "stripping diacritics measurably changes ranking for this query set — "
         "run with more Arabic queries for a statistically meaningful gap.)"
     )
+
+    _, peak_mem = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    print(f"\n--- Memory ---")
+    print(f"  peak memory (full benchmark run): {peak_mem / (1024 * 1024):.1f} MB")
 
 
 if __name__ == "__main__":
