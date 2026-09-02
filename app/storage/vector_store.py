@@ -8,9 +8,9 @@ from app.config import settings
 
 @lru_cache(maxsize=1)
 def get_embedder() -> TextEmbedding:
-    # Multilingual ONNX embedding model for Arabic and English.
     return TextEmbedding(
-        model_name=settings.embedding_model
+        model_name=settings.embedding_model,
+        threads=1,
     )
 
 
