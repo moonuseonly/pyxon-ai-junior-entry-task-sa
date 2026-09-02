@@ -8,27 +8,44 @@ from app.config import settings
 
 @lru_cache(maxsize=1)
 def get_embedder() -> TextEmbedding:
-    # Multilingual, ONNX-based (no PyTorch) so Arabic and English chunks
-    # share one embedding space without the memory cost of a torch model.
-    return TextEmbedding(model_name=settings.embedding_model)
+    # Multilingual ONNX embedding model for Arabic and English.
+    return TextEmbedding(
+        model_name=settings.embedding_model
+    )
 
 
 @lru_cache(maxsize=1)
 def get_collection():
-    client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+    client = chromadb.PersistentClient(
+        path=settings.chroma_persist_dir
+    )
+
     return client.get_or_create_collection(
         name=settings.chroma_collection,
         metadata={"hnsw:space": "cosine"},
     )
 
 
-def embed_texts(texts: list[str], *, is_query: bool = False) -> list[list[float]]:
-    # E5 models are trained with "query:"/"passage:" prefixes — using them
-    # correctly noticeably improves retrieval quality over leaving them off.
-    prefix = "query" if is_query else "passage"
-    prefixed = [f"{prefix}: {t}" for t in texts]
+def embed_texts(
+    texts: list[str],
+    *,
+    is_query: bool = False,
+) -> list[list[float]]:
+    """
+    Generate embeddings for Arabic/English text.
+
+    MiniLM does not require E5-style query:/passage: prefixes.
+    """
+
+    if not texts:
+        return []
+
     embedder = get_embedder()
-    return [e.tolist() for e in embedder.embed(prefixed)]
+
+    return [
+        embedding.tolist()
+        for embedding in embedder.embed(texts)
+    ]
 
 
 def add_chunks(
@@ -37,14 +54,46 @@ def add_chunks(
     texts: list[str],
     metadatas: list[dict],
 ) -> None:
+
     if not ids:
         return
+
     collection = get_collection()
-    embeddings = embed_texts(texts, is_query=False)
-    collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
+
+    # Process chunks in small batches to reduce RAM usage.
+    batch_size = 16
+
+    for start in range(0, len(ids), batch_size):
+
+        end = start + batch_size
+
+        batch_ids = ids[start:end]
+        batch_texts = texts[start:end]
+        batch_metadatas = metadatas[start:end]
+
+        embeddings = embed_texts(
+            batch_texts,
+            is_query=False,
+        )
+
+        collection.add(
+            ids=batch_ids,
+            embeddings=embeddings,
+            documents=batch_texts,
+            metadatas=batch_metadatas,
+        )
 
 
 def query(text: str, top_k: int) -> dict:
+
     collection = get_collection()
-    embedding = embed_texts([text], is_query=True)[0]
-    return collection.query(query_embeddings=[embedding], n_results=top_k)
+
+    embedding = embed_texts(
+        [text],
+        is_query=True,
+    )[0]
+
+    return collection.query(
+        query_embeddings=[embedding],
+        n_results=top_k,
+    )
