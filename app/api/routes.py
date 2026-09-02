@@ -21,7 +21,7 @@ def health():
 
 
 @router.post("/ingest")
-async def ingest(file: UploadFile = File(...)):
+def ingest(file: UploadFile = File(...)):
     suffix = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
     if suffix.lstrip(".") not in {"pdf", "docx", "txt"}:
         raise HTTPException(400, "Unsupported file type. Use PDF, DOCX, or TXT.")
