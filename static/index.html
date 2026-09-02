@@ -266,9 +266,24 @@ $('ingestBtn').addEventListener('click', async () => {
   formData.append('file', selectedFile);
 
   try {
-    const res = await fetch('/ingest', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Ingestion failed');
+const res = await fetch('/ingest', {
+  method: 'POST',
+  body: formData
+});
+
+const text = await res.text();
+
+let data = {};
+
+try {
+  data = text ? JSON.parse(text) : {};
+} catch {
+  data = { detail: text || 'Server returned an invalid response' };
+}
+
+if (!res.ok) {
+  throw new Error(data.detail || 'Ingestion failed');
+}
 
     resultBox.innerHTML = `
       <div><strong>${escapeHtml(data.filename)}</strong>
