@@ -23,19 +23,26 @@ class IngestResult:
     reason: str
 
 
-def ingest_file(file_path: str, *, display_filename: str | None = None) -> IngestResult:
+def ingest_file(
+    file_path: str,
+    *,
+    display_filename: str | None = None,
+) -> IngestResult:
+
     parsed = parse_document(file_path)
+
     if display_filename:
-        # The parser only sees the on-disk path (often a random temp
-        # filename); the caller may know the real, user-facing name — e.g.
-        # the API layer knows the original upload name before it ever gets
-        # written to a temp file.
         parsed.filename = display_filename
 
     analysis = document_analyzer.analyze(parsed)
-    chunks = chunk_document(parsed, analysis.strategy)
+
+    chunks = chunk_document(
+        parsed,
+        analysis.strategy,
+    )
 
     with get_session() as session:
+
         doc = save_document_with_chunks(
             session,
             filename=parsed.filename,
@@ -45,28 +52,54 @@ def ingest_file(file_path: str, *, display_filename: str | None = None) -> Inges
             contains_arabic=arabic_ratio(parsed.full_text) > 0.05,
             chunks=chunks,
         )
+
         session.flush()
 
-        # SQL rows carry the canonical chunk IDs; reuse them as vector IDs so
-        # a retrieval hit can be joined straight back to its SQL metadata.
-        chunk_records = sorted(doc.chunks, key=lambda c: c.chunk_index)
-        vector_store.add_chunks(
-            ids=[c.id for c in chunk_records],
-            texts=[c.text for c in chunk_records],
-            metadatas=[
-                {
-                    "document_id": doc.id,
-                    "filename": doc.filename,
-                    "chunk_index": c.chunk_index,
-                    "page_start": c.page_start or -1,
-                    "page_end": c.page_end or -1,
-                    "heading_path": c.heading_path or "",
-                }
-                for c in chunk_records
-            ],
+        chunk_records = sorted(
+            doc.chunks,
+            key=lambda c: c.chunk_index,
         )
+
+        # ---------------------------------------------------------
+        # Add vectors in small batches.
+        #
+        # We deliberately avoid building the complete ids/texts/
+        # metadatas payload at once.
+        # ---------------------------------------------------------
+
+        batch_size = 16
+
+        for start in range(
+            0,
+            len(chunk_records),
+            batch_size,
+        ):
+
+            batch = chunk_records[
+                start:start + batch_size
+            ]
+
+            vector_store.add_chunks(
+                ids=[c.id for c in batch],
+                texts=[c.text for c in batch],
+                metadatas=[
+                    {
+                        "document_id": doc.id,
+                        "filename": doc.filename,
+                        "chunk_index": c.chunk_index,
+                        "page_start": c.page_start or -1,
+                        "page_end": c.page_end or -1,
+                        "heading_path": c.heading_path or "",
+                    }
+                    for c in batch
+                ],
+            )
+
         chunk_count = len(chunk_records)
 
     return IngestResult(
-        document=doc, chunk_count=chunk_count, strategy=analysis.strategy, reason=analysis.reason
+        document=doc,
+        chunk_count=chunk_count,
+        strategy=analysis.strategy,
+        reason=analysis.reason,
     )
