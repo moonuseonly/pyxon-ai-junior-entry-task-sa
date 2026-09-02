@@ -317,13 +317,10 @@ $('askBtn').addEventListener('click', async () => {
   resultBox.classList.remove('show');
 
   try {
-    const res = await fetch('/query', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, top_k: parseInt($('topK').value) || 5 })
-    });
+    
+    const res = await fetch('/ingest', { method: 'POST', body: formData });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Query failed');
+    if (!res.ok) throw new Error(data.detail || 'Ingestion failed');
 
     const modeBadge = data.mode === 'llm'
       ? '<span class="badge amber">LLM-synthesized</span>'
