@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     chroma_collection: str = "documents"
 
     # Embeddings — multilingual model so English and Arabic share one vector space
-    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_model: str = "intfloat/multilingual-e5-small"
 
     # Chunking
     fixed_chunk_size: int = 800          # characters
