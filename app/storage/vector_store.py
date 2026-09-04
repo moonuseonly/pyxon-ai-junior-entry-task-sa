@@ -97,3 +97,10 @@ def query(text: str, top_k: int) -> dict:
         query_embeddings=[embedding],
         n_results=top_k,
     )
+
+def clear_all() -> None:
+    """Wipe all stored vectors. Keeps the demo to a single active document
+    and stops unbounded growth across test uploads."""
+    client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+    client.delete_collection(name=settings.chroma_collection)
+    get_collection.cache_clear()
