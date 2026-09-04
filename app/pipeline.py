@@ -14,6 +14,8 @@ from app.storage import vector_store
 from app.storage.models import DocumentRecord
 from app.storage.sql_store import get_session, save_document_with_chunks
 
+from app.storage.sql_store import delete_all_documents
+
 
 @dataclass
 class IngestResult:
@@ -23,10 +25,7 @@ class IngestResult:
     reason: str
 
 
-def ingest_file(
-    file_path: str,
-    *,
-    display_filename: str | None = None,
+def ingest_file( file_path: str, *, display_filename: str | None = None, replace_existing: bool = True,
 ) -> IngestResult:
 
     parsed = parse_document(file_path)
@@ -42,7 +41,9 @@ def ingest_file(
     )
 
     with get_session() as session:
-
+        if replace_existing:
+            delete_all_documents(session)
+            vector_store.clear_all()
         doc = save_document_with_chunks(
             session,
             filename=parsed.filename,
@@ -62,7 +63,6 @@ def ingest_file(
 
         # ---------------------------------------------------------
         # Add vectors in small batches.
-        #
         # We deliberately avoid building the complete ids/texts/
         # metadatas payload at once.
         # ---------------------------------------------------------
