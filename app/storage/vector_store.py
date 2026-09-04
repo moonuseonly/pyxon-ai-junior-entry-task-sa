@@ -102,5 +102,8 @@ def clear_all() -> None:
     """Wipe all stored vectors. Keeps the demo to a single active document
     and stops unbounded growth across test uploads."""
     client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
-    client.delete_collection(name=settings.chroma_collection)
+    try:
+        client.delete_collection(name=settings.chroma_collection)
+    except chromadb.errors.NotFoundError:
+        pass  # nothing to clear yet
     get_collection.cache_clear()
