@@ -74,3 +74,8 @@ def get_chunks_by_ids(session: Session, chunk_ids: list[str]) -> list[ChunkRecor
     if not chunk_ids:
         return []
     return session.query(ChunkRecord).filter(ChunkRecord.id.in_(chunk_ids)).all()
+
+def delete_all_documents(session: Session) -> None:
+    """Delete every document (cascades to its chunks via the ORM relationship)."""
+    for doc in session.query(DocumentRecord).all():
+        session.delete(doc)
